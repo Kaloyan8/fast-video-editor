@@ -1,0 +1,280 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Tue May 17 13:36:45 2022
+
+@author: koko
+"""
+from moviepy.editor import VideoFileClip
+from moviepy.editor import ImageClip
+from tkinter import Spinbox
+import subprocess
+import tkinter as tk
+from tkinter import filedialog
+from moviepy.editor import *
+from tkinter import *
+from tkinter import ttk
+from tkinter.filedialog import askopenfilename, asksaveasfilename
+import os
+import glob
+import threading
+from tkinter.messagebox import showinfo
+
+
+ws = Tk()
+ws.geometry('640x480')
+
+# Create a notebook that holds the tabs
+notebook = ttk.Notebook(ws)
+
+# Create tab frames
+tab1 = ttk.Frame(notebook)
+tab2 = ttk.Frame(notebook)
+tab3 = ttk.Frame(notebook)
+# Add the tab frames to the notebook
+notebook.add(tab1, text="Tab One")
+notebook.add(tab2, text="Video List -> Merge Videos")
+notebook.add(tab3, text="Modify Images")
+
+notebook.pack(expand=1, fill='both')
+
+# Place widgets in tab1
+
+
+def trim_video():
+  # Prompt the user to select a file
+  file_path = filedialog.askopenfilename()
+
+  # Create a new window to get the start and end times for the trim
+  trim_window = tk.Toplevel()
+  trim_window.title("Trim Video")
+
+
+  # Add a label for the start time
+  start_label = tk.Label(trim_window, text="Start time (mm:ss)")
+  start_label.pack()
+
+  # Add a label for the end time
+  end_label = tk.Label(trim_window, text="End time (mm:ss)")
+  end_label.pack()
+    
+  # Add a label and entry field for the output file name
+  output_label = tk.Label(trim_window, text="Output file name")
+  output_label.pack()
+  output_entry = tk.Entry(trim_window)
+  output_entry.pack()
+
+  start_spinbox = Spinbox(trim_window, from_=0, to=1440, increment=1, format="%02.f:%02.f") #from_=0, to=1440, increment=1 means that the range of the Spinbox is from 0 to 1440 (24h) with an increment of 1 min.
+  start_spinbox.pack()
+  end_spinbox = Spinbox(trim_window, from_=0, to=1440, increment=1,  format="%02.f:%02.f")
+  end_spinbox.pack()
+
+
+  # Add a "Trim" button
+  def trim():
+    start_time = (int(start_spinbox.get().split(':')[0]) * 60) + int(start_spinbox.get().split(':')[1])
+    end_time = (int(end_spinbox.get().split(':')[0]) * 60) + int(end_spinbox.get().split(':')[1])
+    output_file = output_entry.get()
+    # Use FFmpeg to trim the video
+    subprocess.run(['ffmpeg', '-i', file_path, '-ss', str(start_time), '-to', str(end_time), '-c:v', 'copy', '-c:a', 'copy', output_file])
+    trim_window.destroy()
+  trim_button = tk.Button(trim_window, text="Trim", command=trim)
+  trim_button.pack()
+  
+  
+
+Button(tab1, text="Cut Video", command=trim_video).pack(pady=20, padx=20)
+
+
+def merge_videos():
+    files = filedialog.askopenfilenames(title="Select videos to merge", filetypes=[("Video files", "*.mp4;*.mkv;*.avi")])
+    if not files:
+        return
+
+    output_file = filedialog.asksaveasfilename(defaultextension=".mp4", filetypes=[("MP4 files", "*.mp4")])
+    if not output_file:
+        return
+
+    # Create a progress bar
+    progress = ttk.Progressbar(tab2, mode="indeterminate")
+    progress.pack()
+    progress.start()
+
+    list_file_path = os.path.join(os.getcwd(),"list.txt")
+
+    def run_ffmpeg(files):
+        nonlocal output_file
+        nonlocal list_file_path
+        files = sorted(files)
+        list_file = open(list_file_path, "w")
+        for file in files:
+            list_file.write("file '" + file + "'\n")
+        list_file.close()
+        subprocess.run(["ffmpeg", "-f", "concat", "-safe", "0", "-i", list_file_path, "-c", "copy", output_file])
+    thread = threading.Thread(target=run_ffmpeg, args=(files,))
+    thread.start()
+
+
+    while thread.is_alive():
+        ws.update()
+    
+        
+    def check_thread():
+        if thread.is_alive():
+            ws.after(100, check_thread)
+        else:
+            progress.stop()
+            progress.destroy()
+            showinfo("Merging complete", "The video files have been merged successfully.")
+
+    check_thread()
+
+merge_button = tk.Button(tab1, text="Merge Videos", command=merge_videos)
+merge_button.pack()
+
+def Open2():
+    return os.system("ffmpeg -i garmish-murnau.mp4 -i gar-murnau.wav -c copy -map 0:v:0 -map 1:a:0 garmish-murnau2.mkv")
+
+Button(tab1, text="Patch Sound", command=Open2).pack(pady=20, padx=20)
+
+
+def create_image_sequence_video():
+    # Prompt user to select image files
+    filetypes = (("JPEG files", "*.jpg"), ("PNG files", "*.png"))
+    files = filedialog.askopenfilenames(title="Select image files", filetypes=filetypes)
+
+    if not files:
+        return
+
+    # Prompt user to select output file name
+    output_file = filedialog.asksaveasfilename(defaultextension=".mp4", filetypes=[("MP4 files", "*.mp4")])
+    if not output_file:
+        return
+
+    # Prompt user to select the duration of each image
+    duration_window = tk.Toplevel()
+    duration_window.title("Image Duration")
+    duration_label = tk.Label(duration_window, text="Duration (in seconds)")
+    duration_label.pack()
+    duration_spinbox = tk.Spinbox(duration_window, from_=1, to=60, increment=1)
+    duration_spinbox.pack()
+
+    def create_video():
+        duration = float(duration_spinbox.get())
+        clips = [ImageClip(file).set_duration(duration) for file in files]
+        final_clip = concatenate_videoclips(clips, method="compose")
+        final_clip.write_videofile(output_file, fps=24)
+
+        duration_window.destroy()
+
+    duration_button = tk.Button(duration_window, text="Create Video", command=create_video)
+    duration_button.pack()
+
+    
+    
+    
+Button(ws, text="Create Image Sequence Video", command=create_image_sequence_video).pack(pady=20, padx=20)
+
+
+
+
+
+def fade_in_video():
+    # Prompt the user to select a file
+    file_path = filedialog.askopenfilename()
+
+    # Create a new window to get the output file name
+    fade_in_window = tk.Toplevel()
+    fade_in_window.title("Fade In Video")
+    output_label = tk.Label(fade_in_window, text="Output file name")
+    output_label.pack()
+    output_entry = tk.Entry(fade_in_window)
+    output_entry.pack()
+
+    def fade_in():
+        output_file = output_entry.get()
+        # Open the video file
+        clip = VideoFileClip(file_path)
+        # Create a new subclip that starts at 2 seconds and has the same duration as the original video
+        subclip = clip.subclip(2)
+        # Apply the fade in effect on the audio
+        audio = clip.audio.audio_fadein(2)
+        # Set the audio of the subclip to the audio of the original clip with the fade effect applied
+        subclip = subclip.set_audio(audio)
+
+        # Use ffmpeg to copy the video, audio, and subtitles to the new file
+        subprocess.run(["ffmpeg", "-i", file_path, '-vf', "fade=in:0:30", '-c:a', 'copy', output_file])
+
+
+
+
+
+
+        fade_in_window.destroy()
+        
+    fade_in_button = tk.Button(fade_in_window, text="Fade In", command=fade_in)
+    fade_in_button.pack()
+
+
+
+
+def fade_out_video():
+    # Prompt the user to select a file
+    file_path = filedialog.askopenfilename()
+
+    # Create a new window to get the output file name
+    fade_out_window = tk.Toplevel()
+    fade_out_window.title("Fade Out Video")
+    output_label = tk.Label(fade_out_window, text="Output file name")
+    output_label.pack()
+    output_entry = tk.Entry(fade_out_window)
+    output_entry.pack()
+
+    def fade_out():
+        output_file = output_entry.get()
+        # Use FFmpeg to add fade out effect
+        subprocess.run(['ffmpeg', '-i', file_path, '-af', 'afade=out:st=8:d=2', '-c:v', 'copy', '-c:a', 'copy', output_file])
+        fade_out_window.destroy()
+
+    fade_out_button = tk.Button(fade_out_window, text="Fade Out", command=fade_out)
+    fade_out_button.pack()
+    
+    
+Button(tab1, text="Fade In", command=fade_in_video).pack(pady=20, padx=20)
+Button(tab1, text="Fade Out", command=fade_out_video).pack(pady=20, padx=20)
+
+
+
+
+
+
+
+
+ 
+# Create label
+#l = Label(tab2, text = "Select Videos")
+#l.config(font =("Courier", 14))
+ 
+"""Fact = A man can be arrested in
+Italy for wearing a skirt in public."""
+ 
+# Create button for next text.
+#b1 = Button(tab2, text = "Open",
+#            command = open_file)
+ 
+# Create an Exit button.
+#b2 = Button(tab2, text = "Save",
+#            command = save_file)
+
+
+
+
+
+ 
+
+
+# Place widgets in tab3
+Label(tab3, text="Insert your video list here:").pack()
+Entry(tab3, width=100).pack()
+
+ws.mainloop() 
