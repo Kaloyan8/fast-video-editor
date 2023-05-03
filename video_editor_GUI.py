@@ -12,6 +12,7 @@ import subprocess
 import tkinter as tk
 from tkinter import filedialog
 from moviepy.editor import *
+import moviepy.editor as mp
 from tkinter import *
 from tkinter import ttk
 from tkinter.filedialog import askopenfilename, asksaveasfilename
@@ -41,46 +42,66 @@ notebook.pack(expand=1, fill='both')
 # Place widgets in tab1
 
 
+import subprocess
+import tkinter as tk
+from tkinter import filedialog
+
 def trim_video():
-  # Prompt the user to select a file
-  file_path = filedialog.askopenfilename()
+    # Prompt the user to select a file
+    file_path = filedialog.askopenfilename()
 
-  # Create a new window to get the start and end times for the trim
-  trim_window = tk.Toplevel()
-  trim_window.title("Trim Video")
+    # Use FFprobe to get the duration of the video
+    ffprobe_cmd = ['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', file_path]
+    duration = float(subprocess.check_output(ffprobe_cmd))
+
+    # Create a new window to get the start and end times for the trim
+    trim_window = tk.Toplevel()
+    trim_window.title("Trim Video")
+
+    # Add a label for the start time
+    start_label = tk.Label(trim_window, text="Start time (mm:ss)")
+    start_label.pack()
+
+    # Add a label for the end time
+    end_label = tk.Label(trim_window, text="End time (mm:ss)")
+    end_label.pack()
+
+    # Add a label and entry field for the output file name
+    output_label = tk.Label(trim_window, text="Output file name")
+    output_label.pack()
+    output_entry = tk.Entry(trim_window)
+    output_entry.pack()
+
+    # Add a slider for the start time
+    start_slider = tk.Scale(trim_window, from_=0, to=duration, orient=tk.HORIZONTAL, resolution=1, length=400, label="Start Time")
+    start_slider.pack()
+
+    # Add a slider for the end time
+    end_slider = tk.Scale(trim_window, from_=0, to=duration, orient=tk.HORIZONTAL, resolution=1, length=400, label="End Time")
+    end_slider.pack()
+
+    # Add a "Trim" button
+    def trim():
+        start_time = int(start_slider.get())
+        end_time = int(end_slider.get())
+        duration = end_time - start_time
+        output_file = output_entry.get()
+
+        # Use FFmpeg to trim the video
+        subprocess.run(['ffmpeg', '-i', file_path, '-ss', str(start_time), '-t', str(duration), '-c:v', 'copy', '-c:a', 'copy', output_file])
+
+        # Destroy the trim window
+        trim_window.destroy()
+
+    trim_button = tk.Button(trim_window, text="Trim", command=trim)
+    trim_button.pack()
+
+    # Start the main event loop for the trim window
+    trim_window.mainloop()
 
 
-  # Add a label for the start time
-  start_label = tk.Label(trim_window, text="Start time (mm:ss)")
-  start_label.pack()
-
-  # Add a label for the end time
-  end_label = tk.Label(trim_window, text="End time (mm:ss)")
-  end_label.pack()
-    
-  # Add a label and entry field for the output file name
-  output_label = tk.Label(trim_window, text="Output file name")
-  output_label.pack()
-  output_entry = tk.Entry(trim_window)
-  output_entry.pack()
-
-  start_spinbox = Spinbox(trim_window, from_=0, to=1440, increment=1, format="%02.f:%02.f") #from_=0, to=1440, increment=1 means that the range of the Spinbox is from 0 to 1440 (24h) with an increment of 1 min.
-  start_spinbox.pack()
-  end_spinbox = Spinbox(trim_window, from_=0, to=1440, increment=1,  format="%02.f:%02.f")
-  end_spinbox.pack()
 
 
-  # Add a "Trim" button
-  def trim():
-    start_time = (int(start_spinbox.get().split(':')[0]) * 60) + int(start_spinbox.get().split(':')[1])
-    end_time = (int(end_spinbox.get().split(':')[0]) * 60) + int(end_spinbox.get().split(':')[1])
-    output_file = output_entry.get()
-    # Use FFmpeg to trim the video
-    subprocess.run(['ffmpeg', '-i', file_path, '-ss', str(start_time), '-to', str(end_time), '-c:v', 'copy', '-c:a', 'copy', output_file])
-    trim_window.destroy()
-  trim_button = tk.Button(trim_window, text="Trim", command=trim)
-  trim_button.pack()
-  
   
 
 Button(tab1, text="Cut Video", command=trim_video).pack(pady=20, padx=20)
