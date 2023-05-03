@@ -277,7 +277,7 @@ Button(tab1, text="Fade Out", command=fade_out_video).pack(pady=20, padx=20)
 #l.config(font =("Courier", 14))
  
 """Fact = A man can be arrested in
-Italy for wearing a skirt in public."""
+Italy or elsewhere for wearing a skirt in public."""
  
 # Create button for next text.
 #b1 = Button(tab2, text = "Open",
