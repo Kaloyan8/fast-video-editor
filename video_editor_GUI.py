@@ -20,6 +20,8 @@ import os
 import glob
 import threading
 from tkinter.messagebox import showinfo
+import customtkinter #use this module to improve the design
+
 
 
 ws = Tk()
@@ -42,9 +44,6 @@ notebook.pack(expand=1, fill='both')
 # Place widgets in tab1
 
 
-import subprocess
-import tkinter as tk
-from tkinter import filedialog
 
 def trim_video():
     # Prompt the user to select a file
@@ -153,10 +152,37 @@ def merge_videos():
 merge_button = tk.Button(tab1, text="Merge Videos", command=merge_videos)
 merge_button.pack()
 
-def Open2():
-    return os.system("ffmpeg -i garmish-murnau.mp4 -i gar-murnau.wav -c copy -map 0:v:0 -map 1:a:0 garmish-murnau2.mkv")
+def patch_sound():
+    # Prompt the user to select the video file
+    video_path = filedialog.askopenfilename(title="Select video file", filetypes=[("Video files", "*.mp4;*.mkv;*.avi")])
+    if not video_path:
+        return
 
-Button(tab1, text="Patch Sound", command=Open2).pack(pady=20, padx=20)
+    # Prompt the user to select the audio file
+    audio_path = filedialog.askopenfilename(title="Select audio file", filetypes=[("Audio files", "*.mp3;*.wav")])
+    if not audio_path:
+        return
+    
+    # Prompt the user to enter the output file name and location
+    output_path = filedialog.asksaveasfilename(title="Save merged file as", filetypes=[("Video files", "*.mp4;*.mkv;*.avi")])
+    if not output_path:
+        return
+
+    # Get the duration of the video and audio streams
+    video_duration = float(subprocess.check_output(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', video_path]))
+    audio_duration = float(subprocess.check_output(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', audio_path]))
+
+    # Set the duration of the output file to the shortest input stream
+    duration = min(video_duration, audio_duration)
+
+    # Merge the video and audio files with ffmpeg
+    subprocess.run(["ffmpeg", "-i", video_path, "-i", audio_path, "-c:v", "copy", "-c:a", "aac", "-map", "0:v:0", "-map", "1:a:0", "-t", str(duration), output_path])
+
+    # Show a message box when the process is complete
+    showinfo("Merge Complete", "The audio has been merged with the video.")
+
+
+Button(tab1, text="Patch Sound", command=patch_sound).pack(pady=20, padx=20)
 
 
 def create_image_sequence_video():
