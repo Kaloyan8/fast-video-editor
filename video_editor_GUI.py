@@ -21,25 +21,14 @@ import glob
 import threading
 from tkinter.messagebox import showinfo
 import customtkinter #use this module to improve the design
+import moviepy.editor as mp
 
-
-
-ws = Tk()
-ws.geometry('640x480')
+ws = customtkinter.CTk()
+ws.geometry('600x480')
+customtkinter.set_appearance_mode("Dark") # Other: "Light", "System" (only macOS)
 
 # Create a notebook that holds the tabs
-notebook = ttk.Notebook(ws)
 
-# Create tab frames
-tab1 = ttk.Frame(notebook)
-tab2 = ttk.Frame(notebook)
-tab3 = ttk.Frame(notebook)
-# Add the tab frames to the notebook
-notebook.add(tab1, text="Tab One")
-notebook.add(tab2, text="Video List -> Merge Videos")
-notebook.add(tab3, text="Modify Images")
-
-notebook.pack(expand=1, fill='both')
 
 # Place widgets in tab1
 
@@ -97,13 +86,10 @@ def trim_video():
 
     # Start the main event loop for the trim window
     trim_window.mainloop()
-
-
-
-
   
 
-Button(tab1, text="Cut Video", command=trim_video).pack(pady=20, padx=20)
+Button(text="Cut Video", command=trim_video).pack(pady=20, padx=20)
+
 
 
 def merge_videos():
@@ -116,7 +102,7 @@ def merge_videos():
         return
 
     # Create a progress bar
-    progress = ttk.Progressbar(tab2, mode="indeterminate")
+    progress = ttk.Progressbar(mode="indeterminate")
     progress.pack()
     progress.start()
 
@@ -149,8 +135,10 @@ def merge_videos():
 
     check_thread()
 
-merge_button = tk.Button(tab1, text="Merge Videos", command=merge_videos)
+merge_button = tk.Button(text="Merge Videos", command=merge_videos)
 merge_button.pack()
+
+
 
 def patch_sound():
     # Prompt the user to select the video file
@@ -182,7 +170,31 @@ def patch_sound():
     showinfo("Merge Complete", "The audio has been merged with the video.")
 
 
-Button(tab1, text="Patch Sound", command=patch_sound).pack(pady=20, padx=20)
+Button(ws, text="Patch Sound (for videos)", command=patch_sound).pack(pady=20, padx=20)
+
+
+def patch_sound2():
+    # Prompt the user to select the video file
+    video_path = filedialog.askopenfilename(title="Select video file", filetypes=[("Video files", "*.mp4;*.mkv;*.avi")])
+    if not video_path:
+        return
+
+    # Prompt the user to select the audio file
+    audio_path = filedialog.askopenfilename(title="Select audio file", filetypes=[("Audio files", "*.mp3;*.wav")])
+    if not audio_path:
+        return
+    
+    # Prompt the user to enter the output file name and location
+    output_path = filedialog.asksaveasfilename(title="Save merged file as", filetypes=[("Video files", "*.mp4;*.mkv;*.avi")])
+    if not output_path:
+        return
+
+    # Merge the video and audio files with ffmpeg
+    subprocess.run(["ffmpeg", "-i", video_path, "-i", audio_path, "-c:v", "copy", "-c:a", "aac", "-map", "0:v:0", "-map", "1:a:0", output_path])
+
+
+
+Button(text="Patch Sound (for image sequence)", command=patch_sound2).pack(pady=20, padx=20)
 
 
 def create_image_sequence_video():
@@ -287,8 +299,8 @@ def fade_out_video():
     fade_out_button.pack()
     
     
-Button(tab1, text="Fade In", command=fade_in_video).pack(pady=20, padx=20)
-Button(tab1, text="Fade Out", command=fade_out_video).pack(pady=20, padx=20)
+Button(text="Fade In", command=fade_in_video).pack(pady=20, padx=20)
+Button(text="Fade Out", command=fade_out_video).pack(pady=20, padx=20)
 
 
 
@@ -311,17 +323,5 @@ Italy or elsewhere for wearing a skirt in public."""
  
 # Create an Exit button.
 #b2 = Button(tab2, text = "Save",
-#            command = save_file)
-
-
-
-
-
- 
-
-
-# Place widgets in tab3
-Label(tab3, text="Insert your video list here:").pack()
-Entry(tab3, width=100).pack()
-
+#            command = save_file
 ws.mainloop() 
