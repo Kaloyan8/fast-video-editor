@@ -139,6 +139,69 @@ def merge_videos():
 merge_button = tk.Button(text="Merge Videos", command=merge_videos)
 merge_button.pack()
 
+from tkinter import filedialog, messagebox
+from tkinter import *
+
+def duplicate_video():
+    num_duplicates = [0]  # Use a list to store the value of num_duplicates
+
+    # Prompt the user to select a file
+    file_path = filedialog.askopenfilename()
+
+    # Create a Tkinter window for number of duplications input
+    num_duplicates_window = Tk()
+    num_duplicates_window.title("Number of Duplications")
+
+    def confirm_duplicates():
+        num_duplicates[0] = int(entry.get())
+        num_duplicates_window.destroy()
+        # Prompt the user to enter the output file name and location
+        output_file = filedialog.asksaveasfilename(defaultextension=".mp4", filetypes=[("MP4 files", "*.mp4")])
+        if not output_file:
+            return
+
+        # Create a list to store the duplicated video file paths
+        duplicated_files = []
+
+        # Use FFmpeg to duplicate the video n times
+        for i in range(num_duplicates[0]):
+            duplicated_file = f"{output_file}_{i+1}.mp4"
+            subprocess.run(["ffmpeg", "-i", file_path, "-c", "copy", duplicated_file])
+            duplicated_files.append(duplicated_file)
+
+        # Concatenate the duplicated video files
+        list_file_path = "list.txt"
+        with open(list_file_path, "w") as list_file:
+            for duplicated_file in duplicated_files:
+                list_file.write(f"file '{duplicated_file}'\n")
+
+        subprocess.run(["ffmpeg", "-f", "concat", "-safe", "0", "-i", list_file_path, "-c", "copy", output_file])
+
+        # Delete the temporary duplicated video files and the list file
+        for duplicated_file in duplicated_files:
+            os.remove(duplicated_file)
+        os.remove(list_file_path)
+
+        # Show a message box when the process is complete
+        messagebox.showinfo("Video Duplication Complete", f"The video has been duplicated {num_duplicates[0]} times.")
+
+    label = Label(num_duplicates_window, text="Enter the number of duplications:")
+    label.pack()
+
+    entry = Entry(num_duplicates_window)
+    entry.pack()
+
+    confirm_button = Button(num_duplicates_window, text="Confirm", command=confirm_duplicates)
+    confirm_button.pack()
+
+    num_duplicates_window.mainloop()
+
+Button(ws, text="Duplicate Video", command=duplicate_video).pack(pady=20, padx=20)
+
+
+
+
+
 
 
 def patch_sound():
@@ -198,6 +261,10 @@ def patch_sound2():
 Button(text="Patch Sound (for image sequence)", command=patch_sound2).pack(pady=20, padx=20)
 
 
+
+
+
+
 def create_image_sequence_video():
     # Prompt user to select image files
     filetypes = (("JPEG files", "*.jpg"), ("PNG files", "*.png"))
@@ -229,6 +296,8 @@ def create_image_sequence_video():
 
     duration_button = tk.Button(duration_window, text="Create Video", command=create_video)
     duration_button.pack()
+
+
 
     
     
@@ -326,3 +395,4 @@ Italy or elsewhere for wearing a skirt in public."""
 #b2 = Button(tab2, text = "Save",
 #            command = save_file
 ws.mainloop() 
+
