@@ -28,5 +28,5 @@ Tools available at the moment:
 # Installation and usage instructions 
 
 1. Python and FFmpeg must be installed.
-2. # pip install -r requirements.txt 
+2. run in the terminal # pip install -r requirements.txt 
 3. Run video_Latest_GUI.py
