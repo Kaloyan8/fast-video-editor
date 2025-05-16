@@ -1,17 +1,32 @@
 # fast-video-editor
 
-Introducing a simple but powerful video editing program. This innovative application harnesses the capabilities of FFmpeg, a renowned multimedia framework, to deliver lightning-fast video processing with optimized CPU usage.
+Introducing a simple but powerful video editing program. Perfect for old computers. 
+Top Features:
+
+Drop MoviePy and temp files; add run_ffmpeg helper
+
+In-memory concat (-f concat -i -) and -stream_loop for duplication
+
+GPU-friendly -preset ultrafast and hardware codecs
+
+Auto-detect canvas size; scale…force_original_aspect_ratio=decrease,pad for image sequences
+
+Unified audio patching using shortest‐stream duration
+
+Trim Video function revamped: vlc player incorporated in menu, easier editing and cutting selection.
+
+Added file conversion option if dealing with different formats
 
 Tools available at the moment:
-- merge videos into one
+- merge/duplicate videos into one
 - cut videos
-- create image sequence videos (with the option to duplicate image sequence in development)
+- create image sequence videos
 - fade in & fade out video
 - add sound to video
-
+- File conversion (if dealing with different formats)
 
 # Installation and usage instructions 
 
-1. You need to have Python and FFmpeg installed.
-2. Install the required modules in the requirements.txt file, you can do this with # pip install -r requirements.txt (make sure pip is installed)
-3. Run video_editor_GUI.py in a Python IDE and enjoy the program!
+1. Python and FFmpeg must be installed.
+2. run in the terminal # pip install -r requirements.txt 
+3. Run video_Latest_GUI.py
